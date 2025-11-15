@@ -17,7 +17,7 @@ Like Reality TV, but with AIs.
 
 Create a python virtual env with `python -m venv .venv` and enter it with `source .venv/bin/activate`.
 
-Instal deps with `pip install -r requirements.txt`
+Install deps with `pip install -r requirements.txt`
 
 ## Contributing
 
