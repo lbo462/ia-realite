@@ -1,7 +1,9 @@
 from random import randint
 from uuid import uuid4
+from langchain.agents import create_agent
 
 from .chat_memory import ChatMemory
+from .chat_model import llm, get_response_content
 
 from .entity import Entity
 
@@ -16,15 +18,35 @@ class Room:
         self.room_system_prompt = self._build_room_system_prompt(subject)
         self.memory = ChatMemory(room_id=str(self.uuid))
         self._entities = list()
+        self.summary = ""
         
     def _build_room_system_prompt(self, subject: str) -> str:
         return f"ROOM RULES: /n In this room, there are entites with different personalities. They talk to each other and try to give different point of view concerning the same CONVERSATION SUBJECT of discussion. You are one of them. When you are told: It's your turn, you will receive the current state of the conversation, and you can continue talking, giving your own point of view. Keep your answers short (4 sentences MAX) and relevant to the current topic of discussion. /n CONVERSATION SUBJECT: {subject}."
 
     def add_entity(self, entity_name: str, entity_system_prompt: str):
-        system_message = f"ROOM RULES: {self.room_system_prompt}\n YOU ARE {entity_name}: {entity_system_prompt}"
+        system_message = f"{self.room_system_prompt}\n YOU ARE {entity_name}: {entity_system_prompt}"
         self._entities.append(
             Entity(entity_name, system_message, self.memory)
         )
+    
+    def _generate_entity_summary(self):
+        summary_system_prompt = f"""INSTRUCTION: 
+Now that the conversation has ended, you have to generate a short, concise summary of each entity's point of view in the conversation. An entity is the one that has their name at the beginning of each paragraph, which is followed by a ":" (same name = same entity). You will also have the room rules and the whole conversation as context to understand better the context. DO NOT invent new information NOR return the whole conversation as it is.
+ROOM RULES:
+{self.room_system_prompt}
+CONVERSATION:
+{self.memory.messages}
+"""
+        agent = create_agent(
+            model=llm,
+            system_prompt=summary_system_prompt
+        )
+        
+        ai_response = agent.invoke(
+            {"messages": [{"role": "user", "content": "Generate summary"}]}
+        )
+        
+        self.summary = get_response_content(ai_response)
 
     def sweat(self, amount_of_messages: int = 10):
         exposed_entity_index = 0
@@ -33,6 +55,11 @@ class Room:
             exposed_entity = self._entities[exposed_entity_index]
             exposed_entity.talk()
             
+        # When it's done, generate a summary
+        self._generate_entity_summary()
+        # print(f"SUMMARY: {self.summary}")
+        
+
 def _randint_exclude(min: int, max: int, exclude: int) -> int:
     rand = exclude
     while rand == exclude:
