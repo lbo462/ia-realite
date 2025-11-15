@@ -20,9 +20,17 @@ class Room:
         self.entities = list()
         self.summary = ""
         
+    # dans Room
     def _build_room_system_prompt(self, subject: str) -> str:
-        return f"ROOM RULES: /n In this room, there are entites with different personalities. They talk to each other and try to give different point of view concerning the same CONVERSATION SUBJECT of discussion. You are one of them. When you are told: It's your turn, you will receive the current state of the conversation, and you can continue talking, giving your own point of view. Keep your answers short (4 sentences MAX) and relevant to the current topic of discussion. /n CONVERSATION SUBJECT: {subject}."
-
+        return (
+            "ROOM RULES:\n"
+            " - Le sujet de la conversation est strictement : " + subject + "\n"
+            " - Chaque agent prend la parole à tour de rôle et s'exprime depuis sa personnalité.\n"
+            " - Réponses obligatoires : maximum 2 phrases (court, clair), maximum 2 lignes.\n"
+            " - Chaque phrase doit être pertinente au sujet et refléter l'identité/perspective de l'agent.\n"
+            " - Ne pas dériver sur d'autres sujets, pas d'énumérations longues, pas d'exemples multiples.\n"
+            "CONVERSATION SUBJECT: " + subject + "."
+        )
     def add_entity(self, entity_name: str, entity_system_prompt: str):
         system_message = f"{self.room_system_prompt}\n YOU ARE {entity_name}: {entity_system_prompt}"
         self.entities.append(
