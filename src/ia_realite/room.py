@@ -17,7 +17,7 @@ class Room:
         self.uuid = uuid4()
         self.room_system_prompt = self._build_room_system_prompt(subject)
         self.memory = ChatMemory(room_id=str(self.uuid))
-        self._entities = list()
+        self.entities = list()
         self.summary = ""
         
     def _build_room_system_prompt(self, subject: str) -> str:
@@ -25,7 +25,7 @@ class Room:
 
     def add_entity(self, entity_name: str, entity_system_prompt: str):
         system_message = f"{self.room_system_prompt}\n YOU ARE {entity_name}: {entity_system_prompt}"
-        self._entities.append(
+        self.entities.append(
             Entity(entity_name, system_message, self.memory)
         )
     
@@ -51,13 +51,23 @@ CONVERSATION:
     def sweat(self, amount_of_messages: int = 10):
         exposed_entity_index = 0
         for _ in range(0, amount_of_messages):
-            exposed_entity_index = _randint_exclude(0, len(self._entities) - 1, exposed_entity_index)
-            exposed_entity = self._entities[exposed_entity_index]
+            exposed_entity_index = _randint_exclude(0, len(self.entities) - 1, exposed_entity_index)
+            exposed_entity = self.entities[exposed_entity_index]
             exposed_entity.talk()
             
         # When it's done, generate a summary
         self._generate_entity_summary()
-        # print(f"SUMMARY: {self.summary}")
+        # Then, send final signal to close conversation phase
+        self.memory.add_message("system", "END OF CONVERSATION BETWEEN ENTITIES")
+        
+    def post_sweat_chat(self, entity_index: int, prompt: str) -> str:
+        if entity_index < 0 or entity_index >= len(self.entities):
+            raise ValueError("Invalid entity index")
+        
+        entity = self.entities[entity_index]
+        
+        return entity.talk(prompt=prompt)
+        
         
 
 def _randint_exclude(min: int, max: int, exclude: int) -> int:

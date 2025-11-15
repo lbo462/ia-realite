@@ -15,3 +15,8 @@ for m in room.memory.messages:
     
 print("\n--- SUMMARY ---\n")
 print(room.summary)
+
+print("\n--- POST CHAT ---\n")
+user_message = "As an artist, don't you think that AI can be a threat to creativity?"
+print(f"USER MESSAGE: {user_message}")
+print(f"{room.entities[0].name}: {room.post_sweat_chat(0, user_message)}")

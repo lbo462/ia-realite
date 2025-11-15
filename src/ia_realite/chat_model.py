@@ -9,7 +9,7 @@ load_dotenv()
 # Create a global model instance
 llm = ChatOpenAI(
     model="llama7b",
-    temperature=0.0
+    temperature=0.5
 )
 
 def get_response_content(ai_response) -> str:

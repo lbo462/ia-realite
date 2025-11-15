@@ -26,5 +26,4 @@ class ChatMemory:
             "entity": entity_name,
             "message": message
         })
-
-# memory = ChatMemory()
+        
