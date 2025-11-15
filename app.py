@@ -12,3 +12,6 @@ room.sweat(2)
 
 for m in room.memory.messages:
     print(m["content"])
+    
+print("\n--- SUMMARY ---\n")
+print(room.summary)
