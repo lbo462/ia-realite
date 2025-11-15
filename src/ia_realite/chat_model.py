@@ -1,13 +1,23 @@
 from langchain_openai import ChatOpenAI
 from langchain.messages import AIMessage
+from langchain_groq import ChatGroq
 import re
 
 # Create a global model instance
-llm = ChatOpenAI(
-    model="llama7b",
-    temperature=0.5,
-    base_url="http://localhost:8082/v1",
-    api_key="dummy",
+# llm = ChatOpenAI(
+#     model="llama7b",
+#     temperature=0.5,
+#     base_url="http://localhost:8082/v1",
+#     api_key="dummy",
+# )
+
+# Alternatively, if using Groq API
+llm = ChatGroq(
+    model="llama-3.1-8b-instant",
+    temperature=0.7,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2
 )
 
 
@@ -24,10 +34,4 @@ def get_response_content(ai_response) -> str:
     return re.sub(r"^\w+( )?:( )?", "", str(ai_response))
 
 
-# llm = ChatGroq(
-#     model="llama-3.1-8b-instant",
-#     temperature=0.7,
-#     max_tokens=None,
-#     timeout=None,
-#     max_retries=2,
-# )
+
