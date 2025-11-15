@@ -1,6 +1,7 @@
 import gradio as gr
 from src.ia_realite.room import Room
 
+
 # État temporaire pour les agents ajoutés
 def add_agent(name, personality, agent_list):
     """Ajoute un agent à la liste dynamique."""
@@ -11,6 +12,7 @@ def add_agent(name, personality, agent_list):
 
     display = "\n".join([f"- **{n}** : {p}" for n, p in agent_list])
     return agent_list, gr.update(value=display)
+
 
 # Création de la room
 def create_room(subject, steps, agent_list):
@@ -28,7 +30,8 @@ def create_room(subject, steps, agent_list):
         room.add_entity(name, personality)
 
     # Générer les messages
-    room.sweat(int(steps))
+    for message in room.sweat(int(steps)):
+        print(message)
 
     # Format sortie
     logs = ""
@@ -37,10 +40,10 @@ def create_room(subject, steps, agent_list):
 
     logs_markdown = (
         f"### Room créée : {subject}\n"
-        f"### Agents :\n" +
-        "\n".join([f"- **{name}** *(hover: {p})*" for name, p in agent_list]) +
-        "\n\n### Messages générés :\n" +
-        logs
+        f"### Agents :\n"
+        + "\n".join([f"- **{name}** *(hover: {p})*" for name, p in agent_list])
+        + "\n\n### Messages générés :\n"
+        + logs
     )
 
     return room, logs_markdown
@@ -51,7 +54,6 @@ def create_room(subject, steps, agent_list):
 # ---------------------------------------------------------
 
 with gr.Blocks() as demo:
-
     gr.Markdown("# 🧠 Room Builder — Multi Agents IA")
 
     with gr.Row():
@@ -63,8 +65,7 @@ with gr.Blocks() as demo:
     with gr.Row():
         agent_name = gr.Textbox(label="Nom de l'agent", placeholder="Agent A")
         agent_personality = gr.Textbox(
-            label="System prompt / personnalité",
-            placeholder="Ex: very creative artist"
+            label="System prompt / personnalité", placeholder="Ex: very creative artist"
         )
 
     add_button = gr.Button("➕ Ajouter l'agent")
@@ -75,7 +76,7 @@ with gr.Blocks() as demo:
     add_button.click(
         add_agent,
         inputs=[agent_name, agent_personality, agent_list_state],
-        outputs=[agent_list_state, agent_list_display]
+        outputs=[agent_list_state, agent_list_display],
     )
 
     gr.Markdown("---")
@@ -87,7 +88,7 @@ with gr.Blocks() as demo:
     create_button.click(
         create_room,
         inputs=[subject, steps, agent_list_state],
-        outputs=[room_state, output_display]
+        outputs=[room_state, output_display],
     )
 
 demo.launch()
