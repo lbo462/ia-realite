@@ -1,5 +1,6 @@
 import gradio as gr
 from src.ia_realite.room import Room
+# from src.ia_realite.room_generator import randomize_room  # COUCOU NAVIN # noqa
 
 
 # État temporaire pour les agents ajoutés
@@ -24,6 +25,7 @@ def create_room(subject, steps, agent_list):
 
     # Créer la room
     room = Room(subject)
+    # room = randomize_room(room_subject, number_of_entities)  # COUCOU NAVIN
 
     # Ajouter les agents
     for name, personality in agent_list:
