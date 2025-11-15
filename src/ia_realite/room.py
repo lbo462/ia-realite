@@ -1,8 +1,7 @@
 from random import randint
+from uuid import uuid4
 
-from langchain.agents import create_agent
-from langgraph.checkpoint.memory import InMemorySaver
-
+from .chat_memory import ChatMemory
 
 from .entity import Entity
 
@@ -12,27 +11,31 @@ class Room:
     A room is an entity aggregator
     """
 
-    def __init__(self):
+    def __init__(self, subject: str):
+        self.uuid = uuid4()
+        self.room_system_prompt = self._build_room_system_prompt(subject)
+        self.memory = ChatMemory(room_id=str(self.uuid))
         self._entities = list()
+        
+    def _build_room_system_prompt(self, subject: str) -> str:
+        return f"ROOM RULES: /n In this room, there are entites with different personalities. They talk to each other and try to give different point of view concerning the same CONVERSATION SUBJECT of discussion. You are one of them. When you are told: It's your turn, you will receive the current state of the conversation, and you can continue talking, giving your own point of view. Keep your answers short (4 sentences MAX) and relevant to the current topic of discussion. /n CONVERSATION SUBJECT: {subject}."
 
-    @property
-    def room_system_prompt(self) -> str:
-        return f"""Their are {len(self._entities)} entities living in this room, that are talking to each others. You are one of them."""
-
-    def _create_agent(self, agent_system_prompt: str):
-        system_prompt = f"{self.room_system_prompt}\n{agent_system_prompt}"
-        return create_agent(
-            model="", checkpointer=InMemorySaver(), system_prompt=system_prompt
-        )
-
-    def add_entity(self, system_prompt: str):
+    def add_entity(self, entity_name: str, entity_system_prompt: str):
+        system_message = f"ROOM RULES: {self.room_system_prompt}\n YOU ARE {entity_name}: {entity_system_prompt}"
         self._entities.append(
-            Entity(
-                agent=self._create_agent(agent_system_prompt=system_prompt),
-            )
+            Entity(entity_name, system_message, self.memory)
         )
 
     def sweat(self, amount_of_messages: int = 10):
+        exposed_entity_index = 0
         for _ in range(0, amount_of_messages):
-            exposed_entity = self._entities[randint(0, len(self._entities) - 1)]
+            exposed_entity_index = _randint_exclude(0, len(self._entities) - 1, exposed_entity_index)
+            exposed_entity = self._entities[exposed_entity_index]
             exposed_entity.talk()
+            
+def _randint_exclude(min: int, max: int, exclude: int) -> int:
+    rand = exclude
+    while rand == exclude:
+        rand = randint(min, max)
+        
+    return rand
