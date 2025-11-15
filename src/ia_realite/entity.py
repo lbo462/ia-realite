@@ -24,10 +24,12 @@ class Entity:
         
         return get_response_content(ai_response)
 
-    def talk(self, prompt: str = "It's your turn!"):
+    def talk(self, prompt: str = "It's your turn!") -> str:
         """
         Sends a message to the shared conversation
         :return:
         """
         message = self._generate_message(prompt)
         self.memory.add_message(self.name, message)
+        
+        return message
