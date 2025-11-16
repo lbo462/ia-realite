@@ -62,11 +62,6 @@ class Door:
                         _RegisteredMember(name=name, system_prompt=prompt)
                     )
 
-        display = "## Registered Agents\n"
-        for m in self._registered_members:
-            display += f"- **{m.name}**: {m.system_prompt}\n"
-        return display
-
     def _heat_up(self, duration: int) -> Iterable[str]:
         logs = []
         for message in self._room.sweat(duration):  # type: ignore
@@ -167,7 +162,6 @@ class Door:
                                 gr.ChatInterface(
                                     fn=lambda x, _: e.talk(x),
                                     type="messages",
-                                    chatbot=gr.Chatbot(height=300),
                                     textbox=gr.Textbox(
                                         placeholder=f"Write a message to {e.name}",
                                         container=False,
