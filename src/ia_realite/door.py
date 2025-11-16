@@ -27,18 +27,13 @@ class Door:
         body = self._generate_body()
         body.launch(share=wide_open)
 
-    def _create_room(self, subject: str, preference: str = "") -> str:
+    def _create_room(self, subject: str, preference: str = ""):
         self._room = Room(subject, preference)
         for member in self._registered_members:
             self._room.add_entity(
                 entity_name=member.name, entity_system_prompt=member.system_prompt
             )
-        display = f"## Room : {self._room.subject}\n"
-        for m in self._registered_members:
-            display += f"- {m.name}: {m.system_prompt}\n"
-        display += "---"
-        return display
-    
+
     def _generate_random_room_and_updates(
         self, room_subject: str, number_of_entities: int, preference: str = ""
     ):
@@ -83,21 +78,23 @@ class Door:
             display += f"- **{m.name}**: {m.system_prompt}\n"
         return display
 
-    def _generate_random_room(self, room_subject: str, number_of_entities: int, preference: str = ""):
+    def _generate_random_room(
+        self, room_subject: str, number_of_entities: int, preference: str = ""
+    ):
         """Generate a random room and return updated UI values."""
         # Call your randomize_room function
         self._room = randomize_room(room_subject, number_of_entities, preference)[0]
         response = randomize_room(room_subject, number_of_entities, preference)[1]
-        
+
         # Prepare outputs
         num_entities = len(self._room.entities)
-        
+
         # Update visibility for entity columns
         visibilities = [
             gr.Column(visible=True) if i < num_entities else gr.Column(visible=False)
             for i in range(15)
         ]
-        
+
         # Update entity names and prompts
         names = []
         prompts = []
@@ -108,15 +105,22 @@ class Door:
             else:
                 names.append("")
                 prompts.append("")
-        
+
         # Return: subject, preference, agent_count, *visibilities, *names, *prompts
         return [room_subject, preference, num_entities] + visibilities + names + prompts
 
-    def _heat_up(self, duration: int) -> Iterable[str]:
+    def _heat_up(self, duration: int) -> Iterable[tuple[str, str]]:
+        display = f"## Room : {self._room.subject}\n"
+        for m in self._registered_members:
+            display += f"- {m.name}: {m.system_prompt}\n"
+        display += "---"
+
         logs = []
         for message in self._room.sweat(duration):  # type: ignore
             logs.append(message)
-            yield "\n\n".join(logs)
+            yield "\n\n".join(logs), display
+
+        yield "\n\n".join(logs), display
 
     def _generate_body(self) -> gr.Blocks:
         with gr.Blocks(css=EntityItem.CSS) as body:
@@ -185,7 +189,9 @@ class Door:
                                 }
                             )
 
-                    add_agent_btn = gr.Button("➕ Add Another Agent", variant="secondary")
+                    add_agent_btn = gr.Button(
+                        "➕ Add Another Agent", variant="secondary"
+                    )
 
                     # Wire up the add button
                     add_agent_btn.click(
@@ -209,40 +215,46 @@ class Door:
                     ).then(
                         self._create_room,
                         inputs=[subject, preference],
-                        outputs=[room],
                     ).then(
                         self._heat_up,
                         inputs=[steps],
-                        outputs=[messages],
+                        outputs=[messages, room],
                     )
 
                 # Close popup and show main config
                 close_btn.click(
                     lambda: [gr.update(visible=False), gr.update(visible=True)],
                     [],
-                    [popup, main_config]
+                    [popup, main_config],
                 )
-                
+
                 # Show popup and hide main config
                 add_random_btn.click(
                     lambda: [gr.update(visible=True), gr.update(visible=False)],
                     [],
-                    [popup, main_config]
+                    [popup, main_config],
                 )
-
 
                 # Generate random room and update all UI
                 generate_btn.click(
                     self._generate_random_room,
-                    inputs=[popup_room_subject, number_of_entities, popup_room_preference],
-                    outputs=[subject, preference, agent_count] + entity_columns + [comp["name"] for comp in entity_components] + [comp["prompt"] for comp in entity_components]
+                    inputs=[
+                        popup_room_subject,
+                        number_of_entities,
+                        popup_room_preference,
+                    ],
+                    outputs=[subject, preference, agent_count]
+                    + entity_columns
+                    + [comp["name"] for comp in entity_components]
+                    + [comp["prompt"] for comp in entity_components],
                 ).then(
                     lambda: [gr.update(visible=False), gr.update(visible=True)],
                     [],
-                    [popup, main_config]
+                    [popup, main_config],
                 )
 
             with gr.Tab("Chatboxes"):
+
                 @gr.render(inputs=room)
                 def show_chatboxes(_):
                     if not self._room:
