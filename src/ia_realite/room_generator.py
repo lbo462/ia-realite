@@ -5,7 +5,7 @@ from .room import Room
 from .chat_model import llm, get_response_content
 
 
-def randomize_room(room_subject: str, number_of_entities: int) -> Room:
+def randomize_room(room_subject: str, number_of_entities: int, preference: str = "") -> Room:
     random_system_prompt = f"""INSTRUCTION: 
 You are a personality generator. You are in a room where there are {number_of_entities} people, who will discuss around the same ROOM SUBJECT. Your job is to generate the personality of each of these people. 
 RULES:
@@ -27,7 +27,7 @@ ROOM SUBJECT:
         {"messages": [{"role": "user", "content": "Generate personalities"}]}
     )
 
-    room = Room(room_subject)
+    room = Room(subject=room_subject, preference=preference)
 
     response = json.loads(get_response_content(ai_response))
 

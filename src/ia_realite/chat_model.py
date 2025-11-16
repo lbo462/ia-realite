@@ -1,13 +1,15 @@
+import dotenv
 from langchain_openai import ChatOpenAI
 from langchain.messages import AIMessage
 import re
 
+dotenv.load_dotenv()
 # Create a global model instance
 llm = ChatOpenAI(
     model="llama7b",
     temperature=0.5,
-    base_url="http://localhost:8082/v1",
-    api_key="dummy",
+    # base_url="http://localhost:8082/v1",
+    # api_key="dummy",
 )
 
 
