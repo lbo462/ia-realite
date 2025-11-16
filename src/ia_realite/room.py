@@ -18,7 +18,7 @@ class Room:
         self.uuid = uuid4()
         self.subject = subject
         self.memory = ChatMemory(room_id=str(self.uuid))
-        self.entities = list()
+        self.entities: list[Entity] = list()
 
     @property
     def system_prompt(self) -> str:
