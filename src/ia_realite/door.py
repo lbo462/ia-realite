@@ -26,8 +26,8 @@ class Door:
         body = self._generate_body()
         body.launch(share=wide_open)
 
-    def _create_room(self, subject: str) -> str:
-        self._room = Room(subject)
+    def _create_room(self, subject: str, preference: str = "") -> str:
+        self._room = Room(subject, preference)
         for member in self._registered_members:
             self._room.add_entity(
                 entity_name=member.name, entity_system_prompt=member.system_prompt
@@ -51,7 +51,7 @@ class Door:
 
     def _heat_up(self, duration: int) -> Iterable[str]:
         logs = []
-        for message in self._room.sweat(duration):
+        for message in self._room.sweat(duration): # type: ignore
             logs.append(message)
             yield "\n\n".join(logs)
 
@@ -63,6 +63,10 @@ class Door:
                 subject = gr.Textbox(
                     label="Room's subject",
                     placeholder="Ex: How AI will take over cat's domination",
+                )
+                preference = gr.Textbox(
+                    label="Room's preference",
+                    placeholder="Ex: Friendly discussion, formal debate, etc.",
                 )
                 steps = gr.Number(label="Dialog size", value=5)
 
@@ -92,7 +96,7 @@ class Door:
             room = gr.Markdown()
             messages = gr.Markdown()
 
-            create_button.click(self._create_room, inputs=[subject], outputs=[room])
+            create_button.click(self._create_room, inputs=[subject, preference], outputs=[room])
             create_button.click(
                 self._heat_up,
                 inputs=[steps],
