@@ -22,9 +22,9 @@ class Door:
         self._room: Room | None = None
         self._registered_members: list[_RegisteredMember] = list()
 
-    def open(self):
+    def open(self, wide_open: bool = False):
         body = self._generate_body()
-        body.launch()
+        body.launch(share=wide_open)
 
     def _create_room(self, subject: str) -> str:
         self._room = Room(subject)
