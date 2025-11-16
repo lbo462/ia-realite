@@ -23,11 +23,16 @@ class Room:
 
     @property
     def system_prompt(self) -> str:
-        return f"""ROOM RULES: 
-- In this room, there are entities with different personalities. They talk to each other and try to give different point of view concerning the same CONVERSATION SUBJECT of discussion. You are one of them. When you are told: It's your turn, you will receive the current state of the conversation, and you can continue talking, giving your own point of view. Keep your answers short (4 sentences MAX) and relevant to the current topic of discussion. 
+        preference_block = ""
+        if self.preference:
+            preference_block = f"""
 - PREFERENCE (if provided) guides your tone and style of communication. You should adapt your responses to align with this preference, ensuring that your contributions reflect the specified style or tone.
 PREFERENCE:
 {self.preference}
+"""
+        return f"""ROOM RULES: 
+- In this room, there are entities with different personalities. They talk to each other and try to give different point of view concerning the same CONVERSATION SUBJECT of discussion. You are one of them. When you are told: It's your turn, you will receive the current state of the conversation, and you can continue talking, giving your own point of view. Keep your answers short (4 sentences MAX) and relevant to the current topic of discussion. 
+{preference_block}
 CONVERSATION SUBJECT: 
 {self.subject}.
 """
