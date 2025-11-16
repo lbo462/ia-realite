@@ -4,8 +4,7 @@ class ChatMemory:
     Lives only in RAM, nothing is written to disk.
     """
 
-    def __init__(self, room_id: str):
-        self.room_id = room_id
+    def __init__(self):
         self.memory = []  # List of dicts
 
     @property

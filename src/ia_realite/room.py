@@ -18,7 +18,7 @@ class Room:
         self.uuid = uuid4()
         self.subject = subject
         self.preference = preference
-        self.memory = ChatMemory(room_id=str(self.uuid))
+        self.memory = ChatMemory()
         self.entities: list[Entity] = list()
 
     @property
