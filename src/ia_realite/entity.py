@@ -13,7 +13,9 @@ class Entity:
         self.gmemory = memory
         self.memory = ChatMemory()
 
-    def _generate_message(self, prompt: str = "What's your name?") -> str:
+        self.memory.add_message(self.name, f"YOU ARE {self.name}: {self.system_prompt}")
+
+    def _generate_message(self, prompt: str) -> str:
         agent = create_agent(model=llm, system_prompt=self.system_prompt)
 
         ai_response = agent.invoke(
@@ -26,7 +28,7 @@ class Entity:
 
         return get_response_content(ai_response)
 
-    def talk(self, prompt: str = "") -> str:
+    def talk(self, prompt: str | None = None, *args, **kwargs) -> str:
         """
         Sends a message to the shared conversation
         :return:

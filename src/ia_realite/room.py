@@ -38,9 +38,7 @@ CONVERSATION SUBJECT:
 """
 
     def add_entity(self, entity_name: str, entity_system_prompt: str):
-        system_message = (
-            f"{self.system_prompt}\n YOU ARE {entity_name}: {entity_system_prompt}"
-        )
+        system_message = f"{self.system_prompt}\n{entity_system_prompt}"
         self.entities.append(Entity(entity_name, system_message, self.memory))
 
     def generate_entity_summary(self):

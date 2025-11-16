@@ -267,7 +267,7 @@ class Door:
                         with gr.Row():
                             for e in self._room.entities:
                                 gr.ChatInterface(
-                                    fn=lambda x, _: e.talk(x),
+                                    fn=e.talk,
                                     type="messages",
                                     textbox=gr.Textbox(
                                         placeholder=f"Write a message to {e.name}",
