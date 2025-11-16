@@ -20,6 +20,11 @@ class Room:
         self.preference = preference
         self.memory = ChatMemory(room_id=str(self.uuid))
         self.entities: list[Entity] = list()
+        self._over = False
+
+    @property
+    def is_over(self):
+        return self._over
 
     @property
     def system_prompt(self) -> str:
@@ -65,10 +70,11 @@ CONVERSATION:
                 0, len(self.entities) - 1, exposed_entity_index
             )
             exposed_entity = self.entities[exposed_entity_index]
-            yield f"{exposed_entity.name} says: {exposed_entity.talk()}"
+            yield f"**{exposed_entity.name.upper()} says:** {exposed_entity.talk()}"
 
         # Then, send final signal to close conversation phase
         self.memory.add_message("system", "END OF CONVERSATION BETWEEN ENTITIES")
+        self._over = True
 
     def post_sweat_chat(self, entity_index: int, prompt: str) -> str:
         if entity_index not in range(0, len(self.entities)):
