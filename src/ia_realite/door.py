@@ -253,28 +253,92 @@ class Door:
                     [popup, main_config],
                 )
 
+            # inside Door._generate_body (replacing Chatboxes tab)
             with gr.Tab("Chatboxes"):
-
                 @gr.render(inputs=room)
                 def show_chatboxes(_):
                     if not self._room:
                         gr.Markdown("## Room hasn't started yet")
-                    else:
-                        gr.Markdown("# Room's summary :")
-                        gr.Markdown(self._room.generate_entity_summary())
-                        gr.Markdown("---")
-                        gr.Markdown("You can now talk to the participants.")
-                        with gr.Row():
-                            for e in self._room.entities:
-                                gr.ChatInterface(
-                                    fn=lambda x, _: e.talk(x),
-                                    type="messages",
-                                    textbox=gr.Textbox(
-                                        placeholder=f"Write a message to {e.name}",
-                                        container=False,
-                                        scale=7,
-                                    ),
-                                    title=f"Chat with {e.name}",
-                                )
+                        return
+                    # Summary area (existing)
+                    gr.Markdown("# Room's summary :")
+                    gr.Markdown(self._room.generate_entity_summary())
+                    gr.Markdown("---")
+                    gr.Markdown("You can now talk to the participants.")
+
+                    # fix closure: capture entity per chatbox
+                    def make_chat_fn(entity):
+                        def chat_fn(message, history=None):
+                            return entity.talk(prompt=message)
+                        return chat_fn
+
+                    with gr.Row():
+                        for e in self._room.entities:
+                            gr.ChatInterface(
+                                fn=make_chat_fn(e),
+                                type="messages",
+                                textbox=gr.Textbox(
+                                    placeholder=f"Write a message to {e.name}",
+                                    container=False,
+                                    scale=7,
+                                ),
+                                title=f"Chat with {e.name}",
+                            )
+
+            with gr.Tab("Metrics"):
+                gr.Markdown("# Metrics — visualiser la frugalité")
+                # Controls
+                metric_select = gr.Dropdown(
+                    label="Select metric",
+                    choices=[
+                        "duration_s",
+                        "power_w",
+                        "energy_Wh",
+                        "co2_g",
+                        "tokens",
+                        "tokens_per_Wh",
+                    ],
+                    value="co2_g",
+                )
+                sample_count = gr.Slider(label="Number of points", minimum=10, maximum=1000, step=10, value=200)
+                refresh_btn = gr.Button("Refresh graph")
+
+                plot_output = gr.Plot(label="Metric evolution")
+                export_btn = gr.Button("Export CSV")
+
+                # helper to produce matplotlib figure from Room metrics
+                def _plot_metric(metric_name: str, count: int):
+                    import pandas as pd
+                    import matplotlib.pyplot as plt
+                    if not self._room or not hasattr(self._room, "metrics"):
+                        fig, ax = plt.subplots()
+                        ax.text(0.5, 0.5, "No metrics yet", ha="center", va="center")
+                        return fig
+                    df = self._room.metrics_dataframe()
+                    if df is None or df.empty or metric_name not in df.columns:
+                        fig, ax = plt.subplots()
+                        ax.text(0.5, 0.5, "Metric not available", ha="center", va="center")
+                        return fig
+                    series = df[metric_name].dropna().tail(count).reset_index(drop=True)
+                    fig, ax = plt.subplots(figsize=(8, 3))
+                    ax.plot(series.index.values, series.values)
+                    ax.set_title(f"{metric_name} (last {len(series)} points)")
+                    ax.set_xlabel("sample index")
+                    ax.set_ylabel(metric_name)
+                    ax.grid(True)
+                    return fig
+
+                def _export_csv():
+                    # return path to CSV stored by metrics_collector
+                    import os
+                    from .metrics_collector import OUT_CSV
+                    if os.path.exists(OUT_CSV):
+                        return OUT_CSV
+                    return None
+
+                refresh_btn.click(lambda m, c: _plot_metric(m, c), inputs=[metric_select, sample_count], outputs=[plot_output])
+                # initial plot
+                plot_output.figure = _plot_metric(metric_select.value, sample_count.value)
+                export_btn.click(_export_csv, outputs=[])
 
             return body

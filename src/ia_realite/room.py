@@ -20,6 +20,37 @@ class Room:
         self.preference = preference
         self.memory = ChatMemory(room_id=str(self.uuid))
         self.entities: list[Entity] = list()
+        self.metrics = []  # liste de dicts
+    
+    def push_metric(self, metrics: dict):
+        # stockage en mémoire pour affichage live
+        self.metrics.append(metrics)
+
+    def metrics_dataframe(self):
+        # utilitaire simple qui convertit en pandas DataFrame
+        try:
+            import pandas as pd
+            return pd.DataFrame(self.metrics)
+        except Exception:
+            return None
+    
+    def aggregate_stats(self):
+        # retourne p50/p95/moyenne pour duration et co2 par exemple
+        import numpy as np
+        df = self.metrics_dataframe()
+        if df is None or df.empty:
+            return {}
+        stats = {}
+        for key in ["duration_s", "power_w", "energy_Wh", "co2_g", "tokens", "tokens_per_Wh"]:
+            if key in df.columns:
+                vals = df[key].dropna().values
+                stats[key] = {
+                    "mean": float(vals.mean()),
+                    "p50": float(np.percentile(vals, 50)),
+                    "p95": float(np.percentile(vals, 95)),
+                }
+        return stats
+
 
     @property
     def system_prompt(self) -> str:
