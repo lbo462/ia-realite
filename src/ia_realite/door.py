@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from collections.abc import Iterable
-
 import gradio as gr
 
-from src.ia_realite.room import Room
+from .room import Room
+from .entity_item import EntityItem
 
 
 @dataclass
@@ -32,21 +32,39 @@ class Door:
             self._room.add_entity(
                 entity_name=member.name, entity_system_prompt=member.system_prompt
             )
-
         display = f"## Room : {self._room.subject}\n"
         for m in self._registered_members:
             display += f"- {m.name}: {m.system_prompt}\n"
         display += "---"
         return display
 
-    def _register_new_member(self, name: str, system_prompt: str) -> str:
-        self._registered_members.append(
-            _RegisteredMember(name=name, system_prompt=system_prompt)
-        )
+    def _add_agent(self, current_count):
+        """Shows one more agent card."""
+        new_count = min(current_count + 1, 15)  # Cap at 15
+        # Return visibility states for all possible agent cards
+        visibilities = [
+            gr.Column(visible=True) if i < new_count else gr.Column(visible=False)
+            for i in range(15)
+        ]
+        return [new_count] + visibilities
 
-        display = ""
+    def _collect_entities(self, *args) -> str:
+        """Collects all entity data from the form."""
+        self._registered_members.clear()
+
+        # Args come in groups of 2: name, prompt
+        for i in range(0, len(args), 2):
+            if i + 1 < len(args):
+                name = args[i]
+                prompt = args[i + 1]
+                if name and prompt:  # Only add if both fields are filled
+                    self._registered_members.append(
+                        _RegisteredMember(name=name, system_prompt=prompt)
+                    )
+
+        display = "## Registered Agents\n"
         for m in self._registered_members:
-            display += f"- {m.name}: {m.system_prompt}\n"
+            display += f"- **{m.name}**: {m.system_prompt}\n"
         return display
 
     def _heat_up(self, duration: int) -> Iterable[str]:
@@ -56,7 +74,7 @@ class Door:
             yield "\n\n".join(logs)
 
     def _generate_body(self) -> gr.Blocks:
-        with gr.Blocks() as body:
+        with gr.Blocks(css=EntityItem.CSS) as body:
             with gr.Tab("Room's painting"):
                 gr.Markdown(f"# {self._TITLE}")
 
@@ -73,34 +91,59 @@ class Door:
 
                 gr.Markdown("## 👥 Add agents")
 
-                with gr.Row():
-                    entity_name = gr.Textbox(label="Name", placeholder="John")
-                    entity_system_prompt = gr.Textbox(
-                        label="Personalized prompt",
-                        placeholder="Ex: You are a somebody stuck in an elevator",
-                    )
+                # Track the number of visible agents
+                agent_count = gr.State(value=2)
 
-                add_button = gr.Button("➕ Add agent")
+                # Container for entity items - using grid layout
+                entity_columns = []
+                entity_components = []
 
-                registered_members = gr.Markdown()
+                # Create grid container
+                with gr.Column(elem_classes="entity-grid"):
+                    # Create 15 possible entity items (2 visible initially)
+                    for i in range(15):
+                        entity_item = EntityItem(index=i)
+                        col, name_input, prompt_input = entity_item.render()
 
-                add_button.click(
-                    self._register_new_member,
-                    inputs=[entity_name, entity_system_prompt],
-                    outputs=[registered_members],
+                        if i < 2:
+                            col.visible = True
+
+                        entity_columns.append(col)
+                        entity_components.append(
+                            {
+                                "col": col,
+                                "name": name_input,
+                                "prompt": prompt_input,
+                                "index": i,
+                            }
+                        )
+
+                add_agent_btn = gr.Button("➕ Add Another Agent", variant="secondary")
+
+                # Wire up the add button
+                add_agent_btn.click(
+                    self._add_agent,
+                    inputs=[agent_count],
+                    outputs=[agent_count] + entity_columns,
                 )
 
-                gr.Markdown("---")
+                # Collect all entity inputs for processing
+                all_inputs = []
+                for comp in entity_components:
+                    all_inputs.extend([comp["name"], comp["prompt"]])
 
                 create_button = gr.Button("🚀 Create room")
-
                 room = gr.Markdown()
                 messages = gr.Markdown()
 
                 create_button.click(
-                    self._create_room, inputs=[subject, preference], outputs=[room]
-                )
-                create_button.click(
+                    self._collect_entities,
+                    inputs=all_inputs,
+                ).then(
+                    self._create_room,
+                    inputs=[subject, preference],
+                    outputs=[room],
+                ).then(
                     self._heat_up,
                     inputs=[steps],
                     outputs=[messages],
@@ -112,8 +155,6 @@ class Door:
                 def show_chatboxes(_):
                     if not self._room:
                         gr.Markdown("## Room hasn't started yet")
-                    elif not self._room.is_over:
-                        gr.Markdown("## Room hasn't finished yet")
                     else:
                         gr.Markdown("# Room's summary :")
                         gr.Markdown(self._room.generate_entity_summary())
